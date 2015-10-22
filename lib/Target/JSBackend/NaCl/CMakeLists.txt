@@ -1,3 +1,5 @@
+include_directories( ${CMAKE_CURRENT_BINARY_DIR}/.. ${CMAKE_CURRENT_SOURCE_DIR}/.. )
+
 add_llvm_library(LLVMNaClTransforms
   AddPNaClExternalDecls.cpp
   BackendCanonicalize.cpp
@@ -51,4 +53,4 @@ add_llvm_library(LLVMNaClTransforms
   # Emscripten files end.
   )
 
-add_dependencies(LLVMNaClTransforms intrinsics_gen)
+add_dependencies(LLVMPNaClTransforms intrinsics_gen)
