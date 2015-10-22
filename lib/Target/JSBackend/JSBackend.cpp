@@ -121,16 +121,20 @@ EnableSjLjEH("enable-pnacl-sjlj-eh",
                       "as part of the pnacl-abi-simplify passes"),
              cl::init(false));
 
-// Emscripten options:
 static cl::opt<bool>
-    EnableEmCxxExceptions("enable-emscripten-cxx-exceptions",
-                          cl::desc("Enables C++ exceptions in emscripten"),
-                          cl::init(false));
+EnableEmCxxExceptions("enable-emscripten-cxx-exceptions",
+                      cl::desc("Enables C++ exceptions in emscripten"),
+                      cl::init(false));
 
-static cl::opt<bool> EnableEmAsyncify(
-    "emscripten-asyncify",
-    cl::desc("Enable asyncify transformation (see emscripten ASYNCIFY option)"),
-    cl::init(false));
+static cl::opt<bool>
+EnableEmAsyncify("emscripten-asyncify",
+                 cl::desc("Enable asyncify transformation (see emscripten ASYNCIFY option)"),
+                 cl::init(false));
+
+static cl::opt<bool>
+NoExitRuntime("emscripten-no-exit-runtime",
+              cl::desc("Generate code which assumes the runtime is never exited (so atexit etc. is unneeded; see emscripten NO_EXIT_RUNTIME setting)"),
+              cl::init(false));
 
 
 extern "C" void LLVMInitializeJSBackendTarget() {
@@ -3628,6 +3632,14 @@ bool JSTargetMachine::addPassesToEmitFile(
   assert(FileType == TargetMachine::CGFT_AssemblyFile);
 
   PM.add(createCheckTriplePass());
+
+  if (NoExitRuntime) {
+    PM.add(createNoExitRuntimePass());
+    // removing atexits opens up globalopt/globaldce opportunities
+    PM.add(createGlobalOptimizerPass());
+    PM.add(createGlobalDCEPass());
+  }
+
   // PNaCl legalization
   {
     PM.add(createStripDanglingDISubprogramsPass());
@@ -3729,6 +3741,7 @@ bool JSTargetMachine::addPassesToEmitFile(
     PM.add(createDeadCodeEliminationPass());
   }
   // end PNaCl legalization
+
   PM.add(createExpandInsertExtractElementPass());
   PM.add(createExpandI64Pass());
 
